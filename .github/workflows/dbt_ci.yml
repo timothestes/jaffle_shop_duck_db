@@ -14,54 +14,56 @@ jobs:
       matrix:
         os: ['ubuntu-latest']
         python-version: [3.8]
+
+    # Set environment variables used throughout workflow
     env:
       DBT_PROFILES_DIR: .
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
-  build:
-    runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+
+      - name: Checkout branch
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0  # Fetches all history for all branches
 
-      - name: Set up Git repository
+    # Using bash and pip to install dbt and pre-commit
+    # Update the dbt installation command to include the adapter you need
+      - name: Install dbt and pre-commit
+        shell: bash -l {0}
         run: |
-          # Ensure GitHub Actions considers the workspace safe
-          git config --global --add safe.directory $GITHUB_WORKSPACE
-          # Explicitly fetch all remote branches
-          git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
-          # Check out the PR's head branch explicitly if needed
-          git checkout ${GITHUB_HEAD_REF}
+          python -m pip install dbt-postgres pre-commit
 
+    # This action will output all the files that are being created and modified in our PR
       - name: Get changed files
         id: get_file_changes
-        run: |
-          echo "Fetching changes..."
-          # Fetch 'main' and set it as the base ref
-          git fetch origin main:${GITHUB_BASE_REF}
-          # List new or modified files, excluding deletions
-          git diff --name-only ${{ github.base_ref }}...HEAD > changes.txt
-          FILES_MODIFIED=$(cat changes.txt | grep -v '^D' | tr '\n' ' ')
-          FILES_ADDED=$(git diff --name-status ${{ github.base_ref }}...HEAD | grep '^A' | cut -f2 | tr '\n' ' ')
-          echo "::set-output name=files_modified::${FILES_MODIFIED}"
-          echo "::set-output name=files_added::${FILES_ADDED}"
+        uses: trilom/file-changes-action@v1.2.4
+        with:
+          # optional token
+          githubToken: ${{ github.token }}
+          output: ' '
 
+    # Transforming the output of get_file_changes to a string we can use for our next step
+    # We want to take in account both new files and files that have been modified
       - name: Get changed .sql files in /models to lint
         id: get_files_to_lint
+        shell: bash -l {0}
         run: |
+          # Set the command in the $() brackets as an output to use in later steps
           echo "::set-output name=files::$(
-            echo \
-            $(echo ${{ steps.get_file_changes.outputs.files_modified }} | 
-            tr ' ' '\n' | 
-            grep -E '^models.*\.sql$' | 
-            tr '\n' ' ') \
-            $(echo ${{ steps.get_file_changes.outputs.files_added }} | 
-            tr ' ' '\n' | 
-            grep -E '^models.*\.sql$' | 
-            tr '\n' ' ')
+          # Issue where grep regular expressions don't work as expected on the
+          # Github Actions shell, check dbt/models/ folder
+          echo \
+          $(echo ${{ steps.get_file_changes.outputs.files_modified }} |
+          tr -s ' ' '\n' |
+          grep -E '^models.*[.]sql$' |
+          tr -s '\n' ' ') \
+          $(echo ${{ steps.get_file_changes.outputs.files_added }} |
+          tr -s ' ' '\n' |
+          grep -E '^models.*[.]sql$' |
+          tr -s '\n' ' ')
           )"
 
+    # Finally run pre-commit
       - name: Run pre-commit
+        shell: bash -l {0}
         run: |
           pre-commit run --files ${{ steps.get_files_to_lint.outputs.files }}
