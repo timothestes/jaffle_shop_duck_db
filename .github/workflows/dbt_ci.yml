@@ -14,31 +14,33 @@ jobs:
       matrix:
         os: ['ubuntu-latest']
         python-version: [3.8]
-
     env:
       DBT_PROFILES_DIR: .
-    
+
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # This should fetch all history for all branches
+          fetch-depth: 0  # Fetches all history for all branches
 
       - name: Set up Git repository
         run: |
-          git config --global --add safe.directory $GITHUB_WORKSPACE  # Ensure GitHub Actions considers the workspace safe
-          git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*  # Explicitly fetch all remote branches
-          git checkout ${GITHUB_HEAD_REF}  # Check out the PR's head branch explicitly if needed
+          # Ensure GitHub Actions considers the workspace safe
+          git config --global --add safe.directory $GITHUB_WORKSPACE
+          # Explicitly fetch all remote branches
+          git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
+          # Check out the PR's head branch explicitly if needed
+          git checkout ${GITHUB_HEAD_REF}
 
       - name: Get changed files
         id: get_file_changes
         run: |
           echo "Fetching changes..."
-          # Ensure the base branch 'main' is fetched
-          git fetch origin main:${GITHUB_BASE_REF}  # This fetches 'main' and sets it as the base ref
-          # Use git diff to list new or modified files, excluding deletions
+          # Fetch 'main' and set it as the base ref
+          git fetch origin main:${GITHUB_BASE_REF}
+          # List new or modified files, excluding deletions
           git diff --name-only ${{ github.base_ref }}...HEAD > changes.txt
           FILES_MODIFIED=$(cat changes.txt | grep -v '^D' | tr '\n' ' ')
           FILES_ADDED=$(git diff --name-status ${{ github.base_ref }}...HEAD | grep '^A' | cut -f2 | tr '\n' ' ')
