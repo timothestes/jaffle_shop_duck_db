@@ -25,6 +25,11 @@ models:
 
       - name: number_of_orders
         description: Count of the number of orders a customer has placed
+        # tests:
+        #   - dbt_utils.expression_is_true:
+        #       expression: "number_of_orders > 0"
+        #       warn_if: "count(*) > 100" # Warn if more than 100 records fail this test
+        #       error_if: "count(*) > 1000" # Error if more than 1000 records fail this test
 
       - name: total_order_amount
         description: Total value (AUD) of a customer's orders
