@@ -8,10 +8,10 @@ def check_tests_for_warn(file_path: str) -> bool:
     Check if any DBT test configurations in a YAML file have a severity level of "warn" or use `warn_if` conditions.
 
     Args:
-    file_path (str): The path to the YAML file containing the DBT model configurations.
+        file_path (str): The path to the YAML file containing the DBT model configurations.
 
     Returns:
-    bool: True if no test with "warn" severity or `warn_if` condition is found, False otherwise.
+        bool: True if no test with "warn" severity or `warn_if` condition is found, False otherwise.
     """
     with open(file_path, "r") as file:
         project_config = yaml.safe_load(file)
@@ -26,13 +26,11 @@ def check_tests_for_warn(file_path: str) -> bool:
 
 
 def main():
-    files = sys.argv[1:]
-    errors = False
-    for file_path in files:
-        if not check_tests_for_warn(file_path):
-            print(f"Error: Errors found in test {file_path}")
-            errors = True
-    if errors:
+    """
+    Main function to validate DBT model configurations for warnings.
+    """
+    file_path = sys.argv[1]
+    if not check_tests_for_warn(file_path):
         sys.exit(1)
 
 

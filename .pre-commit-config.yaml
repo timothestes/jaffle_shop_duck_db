@@ -17,3 +17,9 @@ repos:
         entry: python scripts/check_warnings.py
         language: system
         files: 'models/.*\.yml$'
+      - id: dbt-check-primary-key
+
+        name: Check that every model has a primary key
+        entry: python scripts/check_primary_key.py
+        language: system
+        files: 'models/.*\.yml$'
