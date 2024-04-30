@@ -4,8 +4,6 @@ on:
   pull_request:
     branches: 
       - main
-      - tims-private-branch
-      - duckdb
 
 jobs:
   pre-commit-pip:
@@ -39,6 +37,8 @@ jobs:
         id: get_file_changes
         uses: trilom/file-changes-action@v1.2.4
         with:
+          # optional token
+          githubToken: ${{ github.token }}
           output: ' '
 
     # Transforming the output of get_file_changes to a string we can use for our next step
